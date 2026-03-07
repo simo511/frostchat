@@ -6,10 +6,19 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="theme-color" content="#05101f"/>
+<meta name="theme-color" content="#38bdf8" media="(prefers-color-scheme: light)"/>
+<meta name="theme-color" content="#02080f" media="(prefers-color-scheme: dark)"/>
 <meta name="apple-mobile-web-app-title" content="FrostChat"/>
 <meta name="description" content="FrostChat — Real-time messaging"/>
 <title>FrostChat ❄️</title>
+<link rel="manifest" id="fc-manifest"/>
+<script>
+(function(){
+  const m={"name": "FrostChat ❄️", "short_name": "FrostChat", "description": "Real-time chat app — Fast, beautiful, free", "start_url": "/frostchat/", "scope": "/frostchat/", "display": "standalone", "orientation": "portrait", "background_color": "#02080f", "theme_color": "#38bdf8", "lang": "en", "categories": ["social", "communication"], "icons": [{"src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2302080f'/><text y='.9em' font-size='80' x='10'>❄️</text></svg>", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}, {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "sizes": "192x192", "type": "image/png"}, {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "sizes": "512x512", "type": "image/png"}], "screenshots": [{"src": "/frostchat/", "sizes": "360x640", "type": "image/png", "form_factor": "narrow"}], "shortcuts": [{"name": "Open Chat", "url": "/frostchat/", "description": "Open FrostChat"}], "prefer_related_applications": false};
+  const blob=new Blob([JSON.stringify(m)],{type:'application/json'});
+  document.getElementById('fc-manifest').href=URL.createObjectURL(blob);
+})();
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://frostchat-whithout-number-default-rtdb.firebaseio.com" crossorigin/>
@@ -1218,7 +1227,84 @@ body::before {
   content-visibility: auto;
   contain-intrinsic-size: 0 64px;
 }
+
+/* ── PWA INSTALL BANNER ── */
+#pwa-banner {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #0a1828, #152843);
+  border: 1px solid var(--bd3);
+  border-radius: 18px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 9999;
+  box-shadow: 0 8px 32px rgba(0,0,0,.8), 0 0 0 1px rgba(56,189,248,.1);
+  animation: slideUp .4s cubic-bezier(.22,1,.36,1);
+  width: min(340px, 92vw);
+  backdrop-filter: blur(12px);
+}
+#pwa-banner .pwa-icon { font-size: 28px; flex-shrink: 0; }
+#pwa-banner .pwa-text { flex: 1; }
+#pwa-banner .pwa-title { font-size: 12px; font-weight: 900; color: var(--t1); }
+#pwa-banner .pwa-sub { font-size: 10px; color: var(--t3); margin-top: 1px; }
+#pwa-banner .pwa-install-btn {
+  background: var(--ac);
+  border: none;
+  border-radius: 10px;
+  padding: 7px 14px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: transform .15s, background .15s;
+}
+#pwa-banner .pwa-install-btn:active { transform: scale(.95); }
+#pwa-banner .pwa-close {
+  background: none;
+  border: none;
+  color: var(--t3);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+@keyframes slideUp {
+  from { opacity:0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity:1; transform: translateX(-50%) translateY(0); }
+}
+
 </style>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    // Inline SW via blob
+    const swCode = "\nconst CACHE='frostchat-v12';\nconst STATIC=[\n  '/frostchat/',\n  '/frostchat/index.html',\n  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+Arabic:wght@400;600;700;800&display=swap'\n];\n\n// Install \u2014 cache static assets\nself.addEventListener('install',e=>{\n  e.waitUntil(\n    caches.open(CACHE).then(c=>c.addAll(STATIC.filter(u=>!u.startsWith('http')||u.includes('fonts'))))\n    .then(()=>self.skipWaiting())\n  );\n});\n\n// Activate \u2014 delete old caches\nself.addEventListener('activate',e=>{\n  e.waitUntil(\n    caches.keys().then(keys=>Promise.all(\n      keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))\n    )).then(()=>self.clients.claim())\n  );\n});\n\n// Fetch \u2014 Cache First for static, Network First for Firebase\nself.addEventListener('fetch',e=>{\n  const url=e.request.url;\n  // Firebase \u2014 always network\n  if(url.includes('firebaseio.com')){\n    e.respondWith(fetch(e.request).catch(()=>new Response('{}',{headers:{'Content-Type':'application/json'}})));\n    return;\n  }\n  // Fonts & static \u2014 cache first\n  if(url.includes('fonts.g') || url.includes('googleapis')){\n    e.respondWith(\n      caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{\n        const clone=res.clone();\n        caches.open(CACHE).then(c=>c.put(e.request,clone));\n        return res;\n      }))\n    );\n    return;\n  }\n  // HTML \u2014 network first, fallback to cache\n  if(e.request.mode==='navigate'){\n    e.respondWith(\n      fetch(e.request).then(res=>{\n        const clone=res.clone();\n        caches.open(CACHE).then(c=>c.put(e.request,clone));\n        return res;\n      }).catch(()=>caches.match(e.request)||caches.match('/frostchat/'))\n    );\n    return;\n  }\n  e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));\n});\n\n// Push notifications\nself.addEventListener('push',e=>{\n  if(!e.data)return;\n  const d=e.data.json();\n  e.waitUntil(\n    self.registration.showNotification(d.title||'FrostChat',{\n      body:d.body||'New message',\n      icon:'/frostchat/icon.png',\n      badge:'/frostchat/badge.png',\n      tag:'frostchat-msg',\n      renotify:true,\n      vibrate:[200,100,200]\n    })\n  );\n});\n\nself.addEventListener('notificationclick',e=>{\n  e.notification.close();\n  e.waitUntil(clients.openWindow('/frostchat/'));\n});\n";
+    const blob = new Blob([swCode], {type:'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl, {scope:'/frostchat/'})
+      .then(reg=>{
+        window.__swReg = reg;
+        // Check for updates every 60s
+        setInterval(()=>reg.update(), 60000);
+        console.log('SW registered');
+      })
+      .catch(e=>{
+        // Fallback: try registering without scope
+        navigator.serviceWorker.register(swUrl)
+          .then(()=>console.log('SW registered (no scope)'))
+          .catch(()=>{});
+      });
+  });
+}
+</script>
+
 </head>
 
 <body>
@@ -5059,6 +5145,57 @@ function logout(){
   Object.values(UNSUB).forEach(f=>typeof f==="function"&&f());
   render();
 }
+
+// ── PWA INSTALL BANNER ──
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  S.pwaPrompt = e;
+  // Show banner after 3 seconds if not dismissed
+  if(!S.pwaDismissed && !localStorage.getItem('fc_pwa_installed')){
+    setTimeout(showPWABanner, 3000);
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem('fc_pwa_installed', '1');
+  hidePWABanner();
+  showToast('App installed! 🎉', '📱');
+});
+
+function showPWABanner(){
+  if(document.getElementById('pwa-banner')) return;
+  if(localStorage.getItem('fc_pwa_installed')) return;
+  const banner = document.createElement('div');
+  banner.id = 'pwa-banner';
+  banner.innerHTML = `
+    <div class="pwa-icon">❄️</div>
+    <div class="pwa-text">
+      <div class="pwa-title">Install FrostChat</div>
+      <div class="pwa-sub">Add to home screen — works offline</div>
+    </div>
+    <button class="pwa-install-btn" onclick="installPWA()">Install</button>
+    <button class="pwa-close" onclick="hidePWABanner()">✕</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+function hidePWABanner(){
+  const b = document.getElementById('pwa-banner');
+  if(b){ b.style.animation='none'; b.style.opacity='0'; b.style.transform='translateX(-50%) translateY(20px)'; b.style.transition='.3s'; setTimeout(()=>b.remove(), 300); }
+  S.pwaDismissed = true;
+  localStorage.setItem('fc_pwa_dismissed', '1');
+}
+
+function installPWA(){
+  if(S.pwaPrompt){
+    S.pwaPrompt.prompt();
+    S.pwaPrompt.userChoice.then(r=>{
+      if(r.outcome==='accepted'){ localStorage.setItem('fc_pwa_installed','1'); hidePWABanner(); showToast('Installing...','📱'); }
+      S.pwaPrompt = null;
+    });
+  }
+}
+
 window.__appRender=render;
 boot();
 
