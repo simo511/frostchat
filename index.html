@@ -2756,6 +2756,7 @@ if('serviceWorker' in navigator){
       var poll=function(){
         fbGet(p).then(function(d){
           var h=JSON.stringify(d);
+          if(!L[p])return;
           if(h!==L[p].last){L[p].last=h;L[p].cbs.forEach(function(f){f({val:function(){return d;}});});}
         });
       };
@@ -6272,15 +6273,15 @@ function renderSettings(){
 
 /* -- Chat Panel -- */
 function renderChatPanel(){
-  try {
   const t=T;
   let c=S.activeChat;
+  if(!c || !S.user) return h("div",{style:{flex:"1",background:"var(--bg0)"}});
   // Fix DM name: always show the OTHER person's name
   if(c && c.type==="dm" && c.members){
     const other = c.members.find(m=>m!==S.user?.name);
     if(other && other!==c.name) c={...c, name:other};
   }
-  const cu=S.users[c.name];
+  const cu=S.users[c.name]||{};
   const wrap=h("div",{style:{flex:"1",display:"flex",flexDirection:"column",overflow:"hidden",animation:"fadeIn .2s"}});
 
   // Header
@@ -6683,22 +6684,7 @@ function renderChatPanel(){
     if(ta&&!S.editMsg)ta.focus();
   },60);
 
-  
-  } catch(e) {
-    console.error('renderChatPanel error:', e.message, e.stack);
-    const errDiv = h("div",{style:{
-      flex:"1",display:"flex",flexDirection:"column",
-      alignItems:"center",justifyContent:"center",
-      gap:"12px",color:"var(--t3)",padding:"40px"
-    }});
-    errDiv.appendChild(h("div",{style:{fontSize:"40px"}},"💬"));
-    errDiv.appendChild(h("div",{style:{fontSize:"14px",fontWeight:"700",color:"var(--t2)"}},"Unable to load chat"));
-    errDiv.appendChild(h("div",{style:{fontSize:"12px",color:"var(--t3)"}},"Tap to retry"));
-    errDiv.onclick = () => { S.activeChat=null; render(); };
-    return errDiv;
-  }
   return wrap;
-
 }
 
 /* -- Single Message -- */
@@ -8456,6 +8442,8 @@ async function votePoll(chatId, msgId, optIndex){
 }
 
 function renderPollBubble(m, own){
+  if(!m || !m.poll) return h("div",{style:{padding:"10px",color:"var(--t3)",fontSize:"12px"}},"[Poll unavailable]");
+  if(!m.poll.options || !Array.isArray(m.poll.options)) m.poll.options = [];
   const poll = m.poll;
   const wrap = h("div",{className:"poll-wrap"});
   wrap.appendChild(h("div",{style:{fontSize:"10px",color:"var(--t3)",marginBottom:"6px",fontFamily:"JetBrains Mono,monospace",fontWeight:"700"}},"📊 Create Poll"));
