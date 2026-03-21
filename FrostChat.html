@@ -6423,7 +6423,7 @@ function renderChatPanel(){
   }
 
   // Messages area
-  const chatTheme=getChatTheme(c.id);
+  const chatTheme=getChatTheme(c.id)||{bg:"var(--bg0)",pattern:null,patternSize:"auto"};
   const msgsWrap=h("div",{id:"msgs-area",style:{flex:"1",overflowY:"auto",padding:"12px 14px",background:chatTheme.bg,backgroundImage:chatTheme.pattern||"none",backgroundSize:chatTheme.patternSize||"auto"},onClick:()=>{S.msgMenu=null;S.chatMenu=false;if(S.msgMenu!==null)render();}});
 
   const allMsgsFull=Object.values(S.messages[c.id]||{}).filter(m=>m&&m.id).sort((a,b)=>a.ts-b.ts);
