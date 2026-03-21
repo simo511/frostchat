@@ -2899,6 +2899,7 @@ const S = {
   disappearMenu: false,
   adminPanel: false,
   adminTab: "overview",
+  readReceipts: {},
   adminData: null,
   adminMsgSearch: "",
   adminShowDeleted: false,
@@ -5288,6 +5289,7 @@ const ReceiptsDB = {
     const uKey = username.replace(/[.#$[\]]/g,"_");
     const updates = {};
     msgIds.forEach(mid => {
+      if(!mid || typeof mid !== 'string') return;
       const mKey = mid.replace(/[.#$[\]]/g,"_");
       updates["receipts/"+cKey+"/"+mKey+"/"+uKey] = Date.now();
     });
@@ -5303,15 +5305,15 @@ const ReceiptsDB = {
 // Mark current chat as read when opened / messages arrive
 function markActiveChatRead() {
   if(!S.user || !S.activeChat) return;
-  const msgs = Object.values(S.messages[S.activeChat.id]||{})
-    .filter(m => m && m.from !== S.user.name && !m.deleted)
-    .sort((a,b)=>a.ts-b.ts);
-  if(msgs.length) ReceiptsDB.markChatRead(S.activeChat.id, msgs, S.user.name);
+  const msgIds = Object.values(S.messages[S.activeChat.id]||{})
+    .filter(m => m && m.id && m.from !== S.user.name && !m.deleted)
+    .map(m => m.id);
+  if(msgIds.length) ReceiptsDB.markChatRead(S.activeChat.id, msgIds, S.user.name);
 }
 
 // Get read status for a message (for own messages)
 function getMsgReadStatus(chatId, msgId) {
-  const receipts = (S.readReceipts[chatId]||{})[msgId]||{};
+  const receipts = ((S.readReceipts||{})[chatId]||{})[msgId]||{};
   const readers = Object.keys(receipts).filter(u => u.replace(/_/g,".") !== S.user?.name && u !== S.user?.name?.replace(/[.#$[\]]/g,"_"));
   return readers.length > 0 ? "read" : "sent";
 }
@@ -6683,7 +6685,7 @@ function renderChatPanel(){
 
   
   } catch(e) {
-    console.error('renderChatPanel error:', e);
+    console.error('renderChatPanel error:', e.message, e.stack);
     const errDiv = h("div",{style:{
       flex:"1",display:"flex",flexDirection:"column",
       alignItems:"center",justifyContent:"center",
