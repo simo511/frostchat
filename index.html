@@ -23,7 +23,7 @@
 <meta name="twitter:description" content="Real-time chat — Group chats, DMs, voice messages"/>
 <meta name="description" content="FrostChat — Real-time messaging"/>
 <title>FrostChat ❄️</title>
-<link rel="manifest" href="manifest.json"/>
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIkZyb3N0Q2hhdCIsICJzaG9ydF9uYW1lIjogIkZyb3N0Q2hhdCIsICJzdGFydF91cmwiOiAiL2Zyb3N0Y2hhdC8iLCAic2NvcGUiOiAiL2Zyb3N0Y2hhdC8iLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgImJhY2tncm91bmRfY29sb3IiOiAiIzAyMDgwZiIsICJ0aGVtZV9jb2xvciI6ICIjMzhiZGY4IiwgImljb25zIjogW3sic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCclM0UlM0N0ZXh0IHk9Jy45ZW0nIGZvbnQtc2l6ZT0nOTAnJTNFJUUyJTlEJTg0JUVGJUI4JThGJTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwgInNpemVzIjogImFueSIsICJ0eXBlIjogImltYWdlL3N2Zyt4bWwifV19"/>
 <link rel="apple-touch-icon" sizes="152x152" href="/frostchat/icons/icon-152x152.png"/>
 <link rel="apple-touch-icon" sizes="192x192" href="/frostchat/icons/icon-192x192.png"/>
 <link rel="apple-touch-icon" sizes="512x512" href="/frostchat/icons/icon-512x512.png"/>
@@ -2724,11 +2724,12 @@ html, body {
 
 <script>
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js', {scope:'/frostchat/'})
-      .then(reg=>{ window.__swReg=reg; setInterval(()=>reg.update(),60000); })
-      .catch(()=>{});
-  });
+  try{
+    var _swc='self.addEventListener("install",function(e){self.skipWaiting();});self.addEventListener("activate",function(e){self.clients.claim();});self.addEventListener("fetch",function(e){try{var u=new URL(e.request.url);if(u.hostname.indexOf("firebase")>=0||u.hostname.indexOf("google")>=0)return;}catch(ex){return;}e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request);}));});';
+    var _b=new Blob([_swc],{type:"application/javascript"});
+    navigator.serviceWorker.register(URL.createObjectURL(_b),{scope:"/frostchat/"})
+      .then(function(r){window.__swReg=r;}).catch(function(){});
+  }catch(e){}
 }
 </script>
 <script>
@@ -2988,7 +2989,7 @@ function vipBadge(code, sz){
   const size = sz||9;
 
   // LEAD is OWNER ONLY — never rendered via vipBadge for others
-  if(upper==="SIMO511"||upper==="FROST2025"||upper==="SIMO511_OWNER") return null; // owner badge rendered separately
+  if(upper==="SIMOHAMMED"||upper==="FROST2025"||upper==="SIMOHAMMED_OWNER") return null; // owner badge rendered separately
 
   // VIP tier
   const tier = VIP_TIERS[upper];
@@ -3005,7 +3006,7 @@ function vipBadge(code, sz){
   return null;
 }
 
-// OWNER badge — only for simo511
+// OWNER badge — only for Simohammed
 function ownerBadge(sz){
   const b=h("span",{className:"owner-badge",style:{fontSize:(sz||9)+"px"}});
   b.appendChild(h("span",{className:"crown"},"👑"));
@@ -3815,15 +3816,15 @@ async function ensureYouChat(name){
 /* ==========================================
    ADMIN PANEL
 ========================================== */
-const ADMIN_CODE = "SIMO511"; // Only LEAD can access admin
+const ADMIN_CODE = "SIMOHAMMED"; // Only LEAD can access admin
 
 function isAdmin(){
-  // ONLY simo511 — no exceptions, no bypass
+  // ONLY Simohammed — no exceptions, no bypass
   if(!S.user) return false;
-  return S.user.name && S.user.name.toLowerCase()==="simo511";
+  return S.user.name && S.user.name.toLowerCase()==="simohammed";
 }
 function isOwnerCode(code){
-  return code==="SIMO511"||code==="SIMO511_OWNER"||code==="FROST2025";
+  return code==="SIMOHAMMED"||code==="SIMOHAMMED_OWNER"||code==="FROST2025";
 }
 
 async function loadAdminData(){
@@ -4030,7 +4031,7 @@ function renderAdminPanel(){
   hdr.appendChild(h("div",{style:{fontSize:"28px",zIndex:"1"}},"👑"));
   const htxt = h("div",{style:{flex:"1",zIndex:"1"}});
   htxt.appendChild(h("div",{style:{fontSize:"16px",fontWeight:"900",color:"#f59e0b",letterSpacing:".3px"}},"Owner Panel"));
-  htxt.appendChild(h("div",{style:{fontSize:"10px",color:"rgba(245,158,11,.55)",fontFamily:"JetBrains Mono,monospace",marginTop:"1px"}},"simo511 · FULL ACCESS · v19"));
+  htxt.appendChild(h("div",{style:{fontSize:"10px",color:"rgba(245,158,11,.55)",fontFamily:"JetBrains Mono,monospace",marginTop:"1px"}},"Simohammed · FULL ACCESS · v22"));
   hdr.appendChild(htxt);
 
   // Live indicator
@@ -4657,7 +4658,7 @@ async function adminBroadcast(msg){
   let count=0;
   for(const [cid, chat] of Object.entries(chats)){
     if(!chat||!chat.members) continue;
-    const broadMsg={id:uid(),from:"simo511",text:"📢 "+msg,ts:Date.now(),type:"text",replyTo:null,starred:false,reactions:{},deleted:false,edited:false,broadcast:true};
+    const broadMsg={id:uid(),from:"Simohammed",text:"📢 "+msg,ts:Date.now(),type:"text",replyTo:null,starred:false,reactions:{},deleted:false,edited:false,broadcast:true};
     await fetch(B+"/messages/"+cid+"/"+broadMsg.id+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(broadMsg)});
     count++;
   }
@@ -4701,13 +4702,13 @@ async function adminDeleteAllUsersExceptOwner(){
   
   let deleted = 0;
   for(const [name, data] of Object.entries(users)){
-    if(name.toLowerCase() === "simo511") continue; // skip admin
+    if(name.toLowerCase() === "simohammed") continue; // skip admin
     await fetch(B+"/users/"+name+".json", {method:"DELETE"});
     deleted++;
   }
   
   showToast("✅ Deleted "+deleted+" accounts","🗑️");
-  if(S.adminData) S.adminData.users = {simo511: users["simo511"]};
+  if(S.adminData) S.adminData.users = {"Simohammed": users["Simohammed"]};
   render();
 }
 
@@ -5176,7 +5177,7 @@ async function loginAccount(username, password) {
 
 // Check if it's the owner account
 function isOwnerAccount(username) {
-  return username && username.toLowerCase() === "simo511";
+  return username && username.toLowerCase() === "simohammed";
 }
 
 /* ==========================================
@@ -5567,7 +5568,7 @@ function renderLogin(){
 async function completeLogin(name, userData){
   // Owner gets special marker, not a VIP code
   const isOwner = isOwnerAccount(name);
-  const vipCode = isOwner ? "SIMO511_OWNER" : (localStorage.getItem("fc_vip")||"");
+  const vipCode = isOwner ? "SIMOHAMMED_OWNER" : (localStorage.getItem("fc_vip")||"");
 
   S.user = {
     name,
