@@ -2918,6 +2918,8 @@ const S = {
   stickerPanel: false,
   emojiPicker: false,
   stickerTab: "😊",
+  peopleQ: "",
+  peopleFilter: "all",
   colorTheme: localStorage.getItem("fc_color_theme")||"frost",
   avatars: JSON.parse(localStorage.getItem("fc_avatars")||"{}"),
   notifGranted: Notification?.permission==="granted",
@@ -5629,6 +5631,7 @@ function renderSidebar(){
   const pendingReqs = (S.friendRequests||[]).length;
   [
     {id:"chats",   icon:"💬", label:"Chats"},
+    {id:"people",  icon:"👥", label:"People"},
     {id:"friends", icon:"🤝", label:"Friends"},
     {id:"settings",icon:"⚙️", label:"Settings"},
   ].forEach(({id,icon,label})=>{
@@ -5655,6 +5658,7 @@ function renderSidebar(){
   // Tab content
   const content=h("div",{style:{flex:"1",overflowY:"auto"}});
   if(S.tab==="chats")content.appendChild(renderChatList());
+  else if(S.tab==="people")content.appendChild(renderPeopleTab());
   else if(S.tab==="friends")content.appendChild(renderFriendsTab());
   else if(S.tab==="settings")content.appendChild(renderSettings());
   wrap.appendChild(content);
@@ -6109,6 +6113,140 @@ function renderChatList(){
   });
   return wrap;
 }
+
+function renderPeopleTab(){
+  const wrap = h("div",{style:{display:"flex",flexDirection:"column",height:"100%"}});
+
+  // Search bar
+  const searchWrap = h("div",{style:{padding:"8px 12px",borderBottom:"1px solid var(--bd)"}});
+  const searchInp = h("input",{type:"text", className:"inp",
+    placeholder:"🔍 Search people...",
+    style:{fontSize:"12px",padding:"8px 14px"},
+    value: S.peopleQ||""
+  });
+  searchInp.addEventListener("input", e=>{
+    S.peopleQ = e.target.value;
+    clearTimeout(window._pq);
+    window._pq = setTimeout(renderSmart, 200);
+  });
+  searchWrap.appendChild(searchInp);
+  wrap.appendChild(searchWrap);
+
+  // Filter: All / Online
+  const filterBar = h("div",{style:{display:"flex",gap:"6px",padding:"6px 12px",borderBottom:"1px solid var(--bd)"}});
+  ["all","online"].forEach(f=>{
+    const active = (S.peopleFilter||"all")===f;
+    const btn = h("button",{style:{
+      padding:"4px 14px",borderRadius:"20px",border:"none",
+      background: active?"var(--ac)":"var(--bg3)",
+      color: active?"#020c18":"var(--t3)",
+      cursor:"pointer",fontSize:"11px",fontWeight:"700",
+      fontFamily:"'Plus Jakarta Sans',sans-serif",
+      transition:"all .15s"
+    },onClick:()=>{S.peopleFilter=f;render();}},
+      f==="all"?"All":"🟢 Online");
+    filterBar.appendChild(btn);
+  });
+  wrap.appendChild(filterBar);
+
+  // Users list
+  const q = (S.peopleQ||"").toLowerCase();
+  const users = Object.values(S.users||{})
+    .filter(u => u && u.name && u.name !== S.user?.name && u.name !== YOU_NAME)
+    .filter(u => (S.peopleFilter||"all")==="online" ? u.online : true)
+    .filter(u => !q || u.name.toLowerCase().includes(q) || (u.status||"").toLowerCase().includes(q))
+    .sort((a,b) => (b.online?1:0)-(a.online?1:0) || a.name.localeCompare(b.name));
+
+  const list = h("div",{style:{flex:"1",overflowY:"auto"}});
+
+  if(!users.length){
+    const em = h("div",{style:{padding:"40px",textAlign:"center",color:"var(--t3)"}});
+    em.appendChild(h("div",{style:{fontSize:"36px",marginBottom:"10px"}},"👥"));
+    em.appendChild(h("div",{style:{fontSize:"13px",fontWeight:"700",color:"var(--t2)",marginBottom:"4px"}},
+      q ? "No results for \""+q+"\"" : "No users yet"));
+    em.appendChild(h("div",{style:{fontSize:"11px",color:"var(--t3)",marginBottom:"16px"}},
+      "Users appear here when they sign in"));
+    // Refresh button
+    const refBtn = h("button",{style:{
+      padding:"9px 20px",borderRadius:"12px",
+      background:"var(--acg)",border:"1px solid var(--bd2)",
+      color:"var(--ac)",cursor:"pointer",fontSize:"12px",fontWeight:"700",
+      fontFamily:"'Plus Jakarta Sans',sans-serif"
+    },onClick:async()=>{
+      refBtn.textContent="Loading...";
+      try{
+        const snap = await window.__fb.get(window.__fb.ref(null,"users"));
+        const raw = snap.val()||{};
+        S.users={};
+        Object.entries(raw).forEach(([k,v])=>{
+          if(v&&v.name&&v.name!==S.user?.name) S.users[k]=v;
+        });
+        render();
+      }catch(e){ refBtn.textContent="🔄 Retry"; }
+    }},"🔄 Refresh");
+    em.appendChild(refBtn);
+    list.appendChild(em);
+  } else {
+    users.forEach(u=>{
+      const row = h("div",{style:{
+        display:"flex",alignItems:"center",gap:"12px",
+        padding:"10px 14px",cursor:"pointer",
+        borderBottom:"1px solid rgba(56,189,248,.04)",
+        transition:"background .15s"
+      },
+        onClick: async()=>{ S.tab="chats"; await startDM(u.name); },
+        onmouseenter: e=>e.currentTarget.style.background="var(--acg)",
+        onmouseleave: e=>e.currentTarget.style.background="transparent"
+      });
+
+      // Avatar
+      const avWrap = h("div",{style:{position:"relative",flexShrink:"0"}});
+      avWrap.appendChild(renderCustomAv(u.name, 44, {online:u.online}));
+      if(u.online){
+        const dot = h("div",{style:{
+          position:"absolute",bottom:"1px",right:"1px",
+          width:"11px",height:"11px",borderRadius:"50%",
+          background:"#22c55e",border:"2px solid var(--bg1)"
+        }});
+        avWrap.appendChild(dot);
+      }
+      row.appendChild(avWrap);
+
+      // Info
+      const info = h("div",{style:{flex:"1",minWidth:"0"}});
+      const nameRow = h("div",{style:{display:"flex",alignItems:"center",gap:"5px",marginBottom:"2px"}});
+      nameRow.appendChild(h("span",{style:{
+        fontSize:"13px",fontWeight:"800",color:"var(--t1)",
+        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:"1"
+      }}, u.name));
+      const isOwn = isOwnerAccount(u.name);
+      const badge = isOwn ? ownerBadge(7) : vipBadge(u.vipCode,7);
+      if(badge) nameRow.appendChild(badge);
+      info.appendChild(nameRow);
+      info.appendChild(h("div",{style:{
+        fontSize:"11px",fontWeight:"600",
+        color: u.online?"#22c55e":"var(--t3)",
+        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"
+      }}, u.online ? "🟢 Online" : (u.status||"Offline")));
+      row.appendChild(info);
+
+      // Chat button
+      const chatBtn = h("button",{style:{
+        padding:"7px 12px",borderRadius:"10px",flexShrink:"0",
+        background:"var(--acg)",border:"1px solid var(--bd2)",
+        color:"var(--ac)",cursor:"pointer",fontSize:"11px",fontWeight:"800",
+        fontFamily:"'Plus Jakarta Sans',sans-serif"
+      },onClick:e=>{e.stopPropagation();S.tab="chats";startDM(u.name);}},"💬");
+      row.appendChild(chatBtn);
+
+      list.appendChild(row);
+    });
+  }
+
+  wrap.appendChild(list);
+  return wrap;
+}
+
 
 /* -- People List = My Previous Chats -- */
 
